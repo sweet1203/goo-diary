@@ -4,6 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>일기</title>
+
+  <!-- PWA / 홈화면 바로가기 아이콘 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>" />
+  <meta name="apple-mobile-web-app-title" content="일기" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- Pretendard -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
   <style>
     :root {
       --bg:      #ffffff;
@@ -17,12 +29,13 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, 'Helvetica Neue', 'Apple SD Gothic Neo', Arial, sans-serif;
+      font-family: 'Pretendard', -apple-system, 'Helvetica Neue', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100dvh;
       max-width: 640px;
       margin: 0 auto;
+      -webkit-font-smoothing: antialiased;
     }
 
     /* ── 헤더 ── */
@@ -30,28 +43,35 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 28px 24px 0;
+      padding: 32px 28px 0;
       cursor: default;
       user-select: none;
     }
     .logo {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-    #mode-badge {
-      font-size: 0.7rem;
-      color: var(--sub);
-      cursor: pointer;
-      padding: 4px 10px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      transition: border-color .15s;
+      letter-spacing: -0.5px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
     }
-    #mode-badge:hover { border-color: var(--text); }
+    .logo-icon { font-size: 1.1rem; }
+    #mode-badge {
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--sub);
+      cursor: pointer;
+      padding: 5px 11px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.1px;
+    }
+    #mode-badge:hover { border-color: #aaa; color: var(--text); }
+    #mode-badge.dev { border-color: var(--text); color: var(--text); }
     #sync-spin { display: none; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -59,22 +79,23 @@
     .tabs {
       display: flex;
       border-bottom: 1px solid var(--border);
-      margin: 20px 24px 0;
+      margin: 22px 28px 0;
       gap: 0;
     }
     .tab-btn {
-      padding: 10px 0;
-      margin-right: 28px;
+      padding: 11px 0;
+      margin-right: 26px;
       border: none;
       background: none;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
+      font-family: 'Pretendard', sans-serif;
       color: var(--sub);
       cursor: pointer;
       border-bottom: 2px solid transparent;
       margin-bottom: -1px;
       transition: color .15s, border-color .15s;
-      letter-spacing: -0.2px;
+      letter-spacing: -0.1px;
     }
     .tab-btn.active {
       color: var(--text);
@@ -82,7 +103,7 @@
     }
 
     /* ═══════════════ WRITE VIEW ═══════════════ */
-    #write-view { padding: 32px 24px 0; }
+    #write-view { padding: 32px 28px 0; }
 
     .date-row {
       display: flex;
@@ -92,19 +113,21 @@
       position: relative;
     }
     #date-display {
-      font-size: 1.6rem;
+      font-size: 1.75rem;
       font-weight: 700;
-      letter-spacing: -0.8px;
+      letter-spacing: -1px;
       cursor: pointer;
       border-bottom: 2px solid transparent;
       transition: border-color .15s;
       padding-bottom: 2px;
+      line-height: 1.2;
     }
     #date-display:hover { border-bottom-color: var(--text); }
     #date-day {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--sub);
       font-weight: 400;
+      letter-spacing: 0.1px;
     }
     /* 숨겨진 날짜 input */
     #date-picker {
@@ -121,24 +144,25 @@
       outline: none;
       resize: none;
       font-size: 1rem;
-      line-height: 1.85;
+      line-height: 1.9;
       color: var(--text);
-      font-family: inherit;
+      font-family: 'Pretendard', sans-serif;
       background: transparent;
       caret-color: var(--text);
+      letter-spacing: -0.1px;
     }
-    #diary-textarea::placeholder { color: #ccc; }
+    #diary-textarea::placeholder { color: #d0d0d0; }
 
     .write-footer {
       position: sticky;
       bottom: 0;
       background: var(--bg);
       border-top: 1px solid var(--border);
-      padding: 14px 24px;
+      padding: 14px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 0 -24px;
+      margin: 0 -28px;
     }
     .write-footer-left {
       display: flex;
@@ -149,23 +173,23 @@
     #entry-status { font-size: 0.72rem; color: var(--sub); }
 
     #save-btn {
-      padding: 10px 28px;
+      padding: 10px 26px;
       background: var(--text);
       color: var(--bg);
       border: none;
       border-radius: var(--radius);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
+      font-family: 'Pretendard', sans-serif;
       cursor: pointer;
-      letter-spacing: -0.2px;
+      letter-spacing: -0.1px;
       transition: opacity .15s;
-      font-family: inherit;
     }
-    #save-btn:hover { opacity: .75; }
-    #save-btn:disabled { opacity: .25; cursor: not-allowed; }
+    #save-btn:hover { opacity: .72; }
+    #save-btn:disabled { opacity: .22; cursor: not-allowed; }
 
     /* ═══════════════ CALENDAR VIEW ═══════════════ */
-    #calendar-view { padding: 24px; display: none; }
+    #calendar-view { padding: 28px; display: none; }
 
     .month-nav {
       display: flex;
@@ -422,7 +446,7 @@
 
 <!-- 헤더 (5번 탭 → 개발자 모드) -->
 <header id="header-area">
-  <span class="logo">일기</span>
+  <span class="logo"><span class="logo-icon">📔</span> 일기</span>
   <div id="mode-badge">
     <span id="mode-icon">○</span>
     <span id="mode-label">게스트</span>
@@ -757,11 +781,13 @@ function showEntryPanel(dateStr) {
 
 /* ─────────────── 모드 배지 ─────────────── */
 function updateBadge() {
+  const badge = document.getElementById('mode-badge');
   document.getElementById('mode-label').textContent = devMode
-    ? (isSyncing ? '동기화 중' : '개발자')
-    : '게스트';
+    ? (isSyncing ? '동기화 중' : 'Notion 연동')
+    : '로컬 저장';
   document.getElementById('mode-icon').textContent = devMode ? '●' : '○';
   document.getElementById('sync-spin').style.display = isSyncing ? 'inline' : 'none';
+  badge.classList.toggle('dev', devMode);
 }
 
 /* ─────────────── 인증 ─────────────── */
@@ -814,17 +840,18 @@ function logout() {
 
 /* ─────────────── 이벤트 바인딩 ─────────────── */
 
-// 헤더 5번 탭 → 개발자 모드
+// 배지 클릭: 개발자 모드면 로그아웃만, 게스트면 아무것도 안 함
+document.getElementById('mode-badge').addEventListener('click', e => {
+  e.stopPropagation(); // 헤더 탭 카운트에 영향 주지 않도록
+  if (devMode) {
+    if (confirm('게스트 모드로 전환할까요?')) logout();
+  }
+});
+
+// 헤더 로고 영역 5번 탭 → 개발자 모드 모달
 let tapCount = 0, tapTimer;
 document.getElementById('header-area').addEventListener('click', e => {
-  if (e.target.closest('#mode-badge')) {
-    if (devMode) {
-      if (confirm('게스트 모드로 전환할까요?')) logout();
-    } else {
-      showModal();
-    }
-    return;
-  }
+  if (e.target.closest('#mode-badge')) return; // 배지 클릭은 무시
   if (devMode) return;
   clearTimeout(tapTimer);
   tapCount++;
