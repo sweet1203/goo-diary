@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>일기</title>
+  <title>Nest</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>" />
-  <meta name="apple-mobile-web-app-title" content="일기" />
+  <meta name="apple-mobile-web-app-title" content="Nest" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#ffffff" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
@@ -41,9 +42,9 @@
     }
     /* 로고 — 5번 탭하면 개발자 모달 */
     .logo {
-      font-size: 1.05rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.8px;
       cursor: default;
       display: flex;
       align-items: center;
@@ -86,9 +87,18 @@
     #write-view { padding: 32px 28px 0; }
 
     .date-row {
-      display: flex; align-items: baseline; gap: 10px;
+      display: flex; align-items: center; gap: 10px;
       margin-bottom: 28px; position: relative;
     }
+    .date-nav {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border); background: none;
+      border-radius: 50%; font-size: 0.75rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--sub); transition: all .15s; flex-shrink: 0;
+    }
+    .date-nav:hover { border-color: var(--text); color: var(--text); background: var(--hover); }
+    .date-center { display: flex; align-items: baseline; gap: 8px; flex: 1; }
     #date-display {
       font-size: 1.75rem; font-weight: 700; letter-spacing: -1px;
       cursor: pointer; border-bottom: 2px solid transparent;
@@ -116,6 +126,17 @@
     }
     #char-count  { font-size: 0.72rem; color: var(--sub); }
     #entry-status { font-size: 0.72rem; color: var(--sub); margin-left: 12px; }
+    .footer-right { display: flex; gap: 8px; align-items: center; }
+    #new-day-btn {
+      padding: 10px 18px;
+      background: none; color: var(--sub);
+      border: 1px solid var(--border); border-radius: var(--r);
+      font-size: 0.82rem; font-weight: 600;
+      font-family: 'Pretendard', sans-serif;
+      cursor: pointer; letter-spacing: -0.1px;
+      transition: all .15s; display: none;
+    }
+    #new-day-btn:hover { border-color: var(--text); color: var(--text); }
     #save-btn {
       padding: 10px 26px;
       background: var(--text); color: var(--bg);
@@ -289,7 +310,7 @@
 
 <!-- 헤더: 로고 5번 탭 → 개발자 모달 / dev-dot 클릭 → 로그아웃 -->
 <header>
-  <span class="logo" id="logo-tap">📔 일기</span>
+  <span class="logo" id="logo-tap">Nest</span>
   <span id="dev-dot" title="개발자 모드 해제"></span>
 </header>
 
@@ -302,8 +323,12 @@
 <!-- ── WRITE VIEW ── -->
 <div id="write-view">
   <div class="date-row">
-    <div id="date-display"></div>
-    <div id="date-day"></div>
+    <button class="date-nav" id="prev-day">←</button>
+    <div class="date-center">
+      <div id="date-display"></div>
+      <div id="date-day"></div>
+    </div>
+    <button class="date-nav" id="next-day">→</button>
     <input id="date-picker" type="date" />
   </div>
   <textarea id="diary-textarea" placeholder="오늘 하루를 기록해보세요..."></textarea>
@@ -312,7 +337,10 @@
       <span id="char-count">0자</span>
       <span id="entry-status"></span>
     </div>
-    <button id="save-btn">저장</button>
+    <div class="footer-right">
+      <button id="new-day-btn">+ 다른 날 쓰기</button>
+      <button id="save-btn">저장</button>
+    </div>
   </div>
 </div>
 
@@ -481,6 +509,8 @@ async function saveDiary() {
       toast('저장됐어요');
     }
     renderWriteStatus(); renderCalendar();
+    // 저장 완료 후 "다른 날 쓰기" 버튼 표시
+    document.getElementById('new-day-btn').style.display = 'block';
   } catch(e) {
     toast(`저장 실패: ${e.message}`);
   } finally {
@@ -712,7 +742,28 @@ document.getElementById('date-display').addEventListener('click', () => {
 });
 document.getElementById('date-picker').addEventListener('change', e => {
   if (!e.target.value) return;
-  selectedDate = e.target.value; renderWrite();
+  selectedDate = e.target.value;
+  document.getElementById('new-day-btn').style.display = 'none';
+  renderWrite();
+});
+
+// 날짜 ← → 이동
+function shiftDate(days) {
+  const d = parseDateStr(selectedDate);
+  d.setDate(d.getDate() + days);
+  selectedDate = toDateStr(d);
+  document.getElementById('new-day-btn').style.display = 'none';
+  renderWrite();
+}
+document.getElementById('prev-day').addEventListener('click', () => shiftDate(-1));
+document.getElementById('next-day').addEventListener('click', () => shiftDate(+1));
+
+// 다른 날 쓰기 → 오늘 날짜로 이동
+document.getElementById('new-day-btn').addEventListener('click', () => {
+  selectedDate = toDateStr(new Date());
+  document.getElementById('new-day-btn').style.display = 'none';
+  renderWrite();
+  document.getElementById('diary-textarea').focus();
 });
 
 // 텍스트 → 글자 수
