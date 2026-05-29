@@ -67,7 +67,12 @@ export default async function handler(req, res) {
         }),
       });
       const data = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: data.message });
+      if (!r.ok) return res.status(r.status).json({
+        error: data.message,
+        notion_code: data.code,
+        db_id: DB_ID,
+        token_prefix: (process.env.NOTION_TOKEN || '').slice(0, 10) + '...',
+      });
       const entries = data.results.map(pageToEntry);
       return res.status(200).json({ entries });
     }
