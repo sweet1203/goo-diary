@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>일기</title>
+  <style>
+    :root {
+      --bg:      #ffffff;
+      --text:    #0a0a0a;
+      --sub:     #888888;
+      --border:  #e8e8e8;
+      --hover:   #f5f5f5;
+      --radius:  6px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'Helvetica Neue', 'Apple SD Gothic Neo', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 28px 24px 0;
+      cursor: default;
+      user-select: none;
+    }
+    .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    #mode-badge {
+      font-size: 0.7rem;
+      color: var(--sub);
+      cursor: pointer;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      transition: border-color .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #mode-badge:hover { border-color: var(--text); }
+    #sync-spin { display: none; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 탭 ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin: 20px 24px 0;
+      gap: 0;
+    }
+    .tab-btn {
+      padding: 10px 0;
+      margin-right: 28px;
+      border: none;
+      background: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--sub);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s, border-color .15s;
+      letter-spacing: -0.2px;
+    }
+    .tab-btn.active {
+      color: var(--text);
+      border-bottom-color: var(--text);
+    }
+
+    /* ═══════════════ WRITE VIEW ═══════════════ */
+    #write-view { padding: 32px 24px 0; }
+
+    .date-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    #date-display {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: border-color .15s;
+      padding-bottom: 2px;
+    }
+    #date-display:hover { border-bottom-color: var(--text); }
+    #date-day {
+      font-size: 0.85rem;
+      color: var(--sub);
+      font-weight: 400;
+    }
+    /* 숨겨진 날짜 input */
+    #date-picker {
+      position: absolute;
+      opacity: 0;
+      width: 1px; height: 1px;
+      pointer-events: none;
+    }
+
+    #diary-textarea {
+      width: 100%;
+      min-height: 52vh;
+      border: none;
+      outline: none;
+      resize: none;
+      font-size: 1rem;
+      line-height: 1.85;
+      color: var(--text);
+      font-family: inherit;
+      background: transparent;
+      caret-color: var(--text);
+    }
+    #diary-textarea::placeholder { color: #ccc; }
+
+    .write-footer {
+      position: sticky;
+      bottom: 0;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 -24px;
+    }
+    .write-footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    #char-count { font-size: 0.72rem; color: var(--sub); }
+    #entry-status { font-size: 0.72rem; color: var(--sub); }
+
+    #save-btn {
+      padding: 10px 28px;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: -0.2px;
+      transition: opacity .15s;
+      font-family: inherit;
+    }
+    #save-btn:hover { opacity: .75; }
+    #save-btn:disabled { opacity: .25; cursor: not-allowed; }
+
+    /* ═══════════════ CALENDAR VIEW ═══════════════ */
+    #calendar-view { padding: 24px; display: none; }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .nav-arrow {
+      width: 30px; height: 30px;
+      border: 1px solid var(--border);
+      background: none;
+      border-radius: var(--radius);
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text);
+      transition: background .1s;
+    }
+    .nav-arrow:hover { background: var(--hover); }
+    .month-selects {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+    .month-selects select {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 5px 8px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      background: white;
+      cursor: pointer;
+      outline: none;
+      color: var(--text);
+      transition: border-color .15s;
+    }
+    .month-selects select:focus { border-color: var(--text); }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 24px;
+    }
+    .cal-head {
+      text-align: center;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--sub);
+      padding: 6px 0 10px;
+      letter-spacing: 0.3px;
+    }
+    .cal-head:first-child { color: #e05252; }
+    .cal-head:last-child  { color: #5271e0; }
+
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background .1s;
+      position: relative;
+      font-size: 0.82rem;
+    }
+    .cal-day:hover:not(.empty) { background: var(--hover); }
+    .cal-day.empty { cursor: default; pointer-events: none; }
+    .cal-day.other-month { color: #ccc; }
+    .cal-day.other-month .dot { background: #ddd; }
+
+    /* 오늘 */
+    .cal-day.today .day-num {
+      font-weight: 700;
+    }
+    .cal-day.today .day-num::after {
+      content: '';
+      display: block;
+      width: 3px; height: 3px;
+      background: var(--text);
+      border-radius: 50%;
+      margin: 2px auto 0;
+    }
+
+    /* 일기 있는 날 — 원 */
+    .cal-day.has-entry .day-num {
+      width: 28px; height: 28px;
+      border: 1.5px solid var(--text);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+    /* 오늘 + 일기 있음 */
+    .cal-day.today.has-entry .day-num {
+      background: var(--text);
+      color: var(--bg);
+    }
+    .cal-day.today.has-entry .day-num::after { display: none; }
+
+    /* 선택된 날 */
+    .cal-day.selected:not(.has-entry) .day-num {
+      background: var(--hover);
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 일요일/토요일 색 */
+    .cal-day:nth-child(7n+1) .day-num { color: #e05252; }
+    .cal-day:nth-child(7n)   .day-num { color: #5271e0; }
+    .cal-day.has-entry:nth-child(7n+1) .day-num,
+    .cal-day.has-entry:nth-child(7n)   .day-num { color: inherit; }
+
+    /* ── 일기 미리보기 패널 ── */
+    #entry-panel {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      display: none;
+    }
+    .panel-date {
+      font-size: 0.75rem;
+      color: var(--sub);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-edit-btn {
+      font-size: 0.72rem;
+      color: var(--sub);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color .15s;
+    }
+    .panel-edit-btn:hover { border-color: var(--text); color: var(--text); }
+    .panel-content {
+      font-size: 0.9rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+    .panel-empty {
+      font-size: 0.85rem;
+      color: var(--sub);
+    }
+
+    /* ── 비밀번호 모달 ── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    #modal-overlay.show { display: flex; }
+    #modal {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 32px 28px;
+      width: min(360px, 90vw);
+      box-shadow: 0 8px 40px rgba(0,0,0,.14);
+      animation: popIn .18s ease;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    #modal h2 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
+    #modal p  { font-size: 0.78rem; color: var(--sub); margin-bottom: 20px; line-height: 1.6; }
+    #modal-pw {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px 14px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      margin-bottom: 10px;
+      transition: border-color .15s;
+    }
+    #modal-pw:focus { border-color: var(--text); }
+    #modal-err { font-size: 0.75rem; color: #e05252; min-height: 16px; margin-bottom: 14px; }
+    .modal-btns { display: flex; gap: 8px; }
+    .modal-btns button {
+      flex: 1; padding: 11px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .15s;
+    }
+    #modal-cancel { background: var(--bg); color: var(--sub); }
+    #modal-ok { background: var(--text); color: var(--bg); border-color: var(--text); }
+    #modal-ok:hover { opacity: .75; }
+
+    /* ── 토스트 ── */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text);
+      color: var(--bg);
+      padding: 9px 18px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      z-index: 999;
+      opacity: 0;
+      transition: opacity .2s, transform .2s;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (min-width: 520px) {
+      #date-display { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 토스트 -->
+<div id="toast"></div>
+
+<!-- 비밀번호 모달 -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2>개발자 모드</h2>
+    <p>비밀번호를 입력하면 Notion과 동기화됩니다.<br>게스트는 취소를 눌러 로컬 모드로 사용하세요.</p>
+    <input id="modal-pw" type="password" placeholder="비밀번호" autocomplete="current-password" />
+    <div id="modal-err"></div>
+    <div class="modal-btns">
+      <button id="modal-cancel">취소</button>
+      <button id="modal-ok">로그인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 헤더 (5번 탭 → 개발자 모드) -->
+<header id="header-area">
+  <span class="logo">일기</span>
+  <div id="mode-badge">
+    <span id="mode-icon">○</span>
+    <span id="mode-label">게스트</span>
+    <span id="sync-spin">↻</span>
+  </div>
+</header>
+
+<!-- 탭 -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="write">쓰기</button>
+  <button class="tab-btn" data-tab="calendar">캘린더</button>
+</div>
+
+<!-- ── WRITE VIEW ── -->
+<div id="write-view">
+  <div class="date-row">
+    <div id="date-display"></div>
+    <div id="date-day"></div>
+    <input id="date-picker" type="date" />
+  </div>
+  <textarea id="diary-textarea" placeholder="오늘 하루를 기록해보세요..."></textarea>
+  <div class="write-footer">
+    <div class="write-footer-left">
+      <span id="char-count">0자</span>
+      <span id="entry-status"></span>
+    </div>
+    <button id="save-btn">저장</button>
+  </div>
+</div>
+
+<!-- ── CALENDAR VIEW ── -->
+<div id="calendar-view">
+  <div class="month-nav">
+    <button class="nav-arrow" id="prev-month">&#8592;</button>
+    <div class="month-selects">
+      <select id="sel-year"></select>
+      <select id="sel-month">
+        <option value="0">1월</option><option value="1">2월</option>
+        <option value="2">3월</option><option value="3">4월</option>
+        <option value="4">5월</option><option value="5">6월</option>
+        <option value="6">7월</option><option value="7">8월</option>
+        <option value="8">9월</option><option value="9">10월</option>
+        <option value="10">11월</option><option value="11">12월</option>
+      </select>
+    </div>
+    <button class="nav-arrow" id="next-month">&#8594;</button>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div id="entry-panel">
+    <div class="panel-date">
+      <span id="panel-date-text"></span>
+      <button class="panel-edit-btn" id="panel-edit-btn">수정하기</button>
+    </div>
+    <div id="panel-body"></div>
+  </div>
+</div>
+
+<script>
+/* ─────────────── 상수 / 상태 ─────────────── */
+const STORAGE_KEY = 'goo_diary_v1';
+const TOKEN_KEY   = 'goo_diary_token';
+const API         = '/api';
+const DAYS_KO     = ['일','월','화','수','목','금','토'];
+
+let devMode  = false;
+let devToken = null;
+let isSyncing = false;
+
+// 날짜별 항목 맵: { "2026-05-29": { content, notionId, savedAt } }
+let entries = {};
+
+// 현재 선택 날짜 (YYYY-MM-DD)
+let selectedDate = toDateStr(new Date());
+
+// 캘린더 상태
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selectedCalDate = null;
+
+/* ─────────────── 날짜 유틸 ─────────────── */
+function toDateStr(d) {
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function parseDateStr(s) {
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function formatDisplayDate(s) {
+  const d = parseDateStr(s);
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`;
+}
+function getDayLabel(s) {
+  return DAYS_KO[parseDateStr(s).getDay()] + '요일';
+}
+
+/* ─────────────── 스토리지 ─────────────── */
+function isStorageAvailable() {
+  try { localStorage.setItem('__t__','1'); localStorage.removeItem('__t__'); return true; }
+  catch { return false; }
+}
+const HAS_STORAGE = isStorageAvailable();
+
+function loadLocal() {
+  if (!HAS_STORAGE) return {};
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveLocal() {
+  if (!HAS_STORAGE) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+/* ─────────────── 토스트 ─────────────── */
+let _toastTimer;
+function toast(msg, ms = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+/* ─────────────── XSS ─────────────── */
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ─────────────── API 헬퍼 ─────────────── */
+function apiHeaders() {
+  return { 'Content-Type':'application/json', 'Authorization':`Bearer ${devToken}` };
+}
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API + path, { ...opts, headers: { ...apiHeaders(), ...(opts.headers||{}) } });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || `오류 ${res.status}`); }
+  return res.json();
+}
+
+/* ─────────────── Notion 동기화 ─────────────── */
+async function syncFromNotion() {
+  isSyncing = true; updateBadge();
+  try {
+    const data = await apiFetch('/diary');
+    entries = {};
+    for (const e of data.entries) {
+      if (e.date) entries[e.date] = { content: e.content, notionId: e.notionId, savedAt: e.date };
+    }
+    renderWrite();
+    renderCalendar();
+    toast('Notion과 동기화됐어요');
+  } catch(e) {
+    toast(`동기화 실패: ${e.message}`);
+  } finally {
+    isSyncing = false; updateBadge();
+  }
+}
+
+async function notionSave(date, content) {
+  const existing = entries[date];
+  if (existing?.notionId) {
+    await apiFetch('/diary', { method:'PATCH', body: JSON.stringify({ notionId: existing.notionId, content }) });
+    return existing.notionId;
+  } else {
+    const r = await apiFetch('/diary', { method:'POST', body: JSON.stringify({ date, content }) });
+    return r.notionId;
+  }
+}
+
+/* ─────────────── 저장 ─────────────── */
+async function saveDiary() {
+  const content = document.getElementById('diary-textarea').value.trim();
+  if (!content) return;
+
+  document.getElementById('save-btn').disabled = true;
+  document.getElementById('save-btn').textContent = '저장 중...';
+
+  try {
+    const existing = entries[selectedDate] || {};
+    if (devMode) {
+      const notionId = await notionSave(selectedDate, content);
+      entries[selectedDate] = { content, notionId, savedAt: new Date().toISOString() };
+      toast('Notion에 저장됐어요');
+    } else {
+      entries[selectedDate] = { content, notionId: existing.notionId || null, savedAt: new Date().toISOString() };
+      saveLocal();
+      toast('저장됐어요');
+    }
+    renderWriteStatus();
+    renderCalendar();
+  } catch(e) {
+    toast(`저장 실패: ${e.message}`);
+  } finally {
+    document.getElementById('save-btn').disabled = false;
+    document.getElementById('save-btn').textContent = '저장';
+  }
+}
+
+/* ─────────────── WRITE 렌더링 ─────────────── */
+function renderWrite() {
+  // 날짜 표시
+  document.getElementById('date-display').textContent = formatDisplayDate(selectedDate);
+  document.getElementById('date-day').textContent = getDayLabel(selectedDate);
+  document.getElementById('date-picker').value = selectedDate;
+
+  // 내용 불러오기
+  const entry = entries[selectedDate];
+  const textarea = document.getElementById('diary-textarea');
+  if (document.activeElement !== textarea) {
+    textarea.value = entry?.content || '';
+  }
+  updateCharCount();
+  renderWriteStatus();
+}
+
+function renderWriteStatus() {
+  const entry = entries[selectedDate];
+  const el = document.getElementById('entry-status');
+  if (entry?.savedAt) {
+    const d = new Date(entry.savedAt);
+    const p = n => String(n).padStart(2,'0');
+    el.textContent = `${p(d.getHours())}:${p(d.getMinutes())} 저장됨` + (entry.notionId ? ' · Notion' : '');
+  } else {
+    el.textContent = '';
+  }
+}
+
+function updateCharCount() {
+  const len = document.getElementById('diary-textarea').value.length;
+  document.getElementById('char-count').textContent = `${len.toLocaleString()}자`;
+}
+
+/* ─────────────── CALENDAR 렌더링 ─────────────── */
+function buildYearOptions() {
+  const sel = document.getElementById('sel-year');
+  const cur = new Date().getFullYear();
+  sel.innerHTML = '';
+  for (let y = cur + 1; y >= cur - 5; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = `${y}년`;
+    if (y === calYear) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+
+function renderCalendar() {
+  buildYearOptions();
+  document.getElementById('sel-month').value = calMonth;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  // 요일 헤더
+  ['일','월','화','수','목','금','토'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'cal-head';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const today = toDateStr(new Date());
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  // 이전 달 빈칸
+  for (let i = 0; i < firstDay; i++) {
+    const day = daysInPrev - firstDay + 1 + i;
+    appendDay(grid, day, calYear, calMonth - 1, today, true);
+  }
+
+  // 현재 달
+  for (let d = 1; d <= daysInMonth; d++) {
+    appendDay(grid, d, calYear, calMonth, today, false);
+  }
+
+  // 다음 달 빈칸
+  const total = firstDay + daysInMonth;
+  const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= remain; i++) {
+    appendDay(grid, i, calYear, calMonth + 1, today, true);
+  }
+
+  // 패널 갱신
+  if (selectedCalDate) showEntryPanel(selectedCalDate);
+}
+
+function appendDay(grid, day, year, month, today, otherMonth) {
+  const p = n => String(n).padStart(2,'0');
+  // month는 0-based
+  const realMonth = ((month % 12) + 12) % 12;
+  const realYear  = year + Math.floor(month / 12);
+  const dateStr   = `${realYear}-${p(realMonth+1)}-${p(day)}`;
+
+  const cell = document.createElement('div');
+  cell.className = 'cal-day';
+  if (otherMonth) cell.classList.add('other-month');
+  if (dateStr === today) cell.classList.add('today');
+  if (entries[dateStr]?.content) cell.classList.add('has-entry');
+  if (dateStr === selectedCalDate) cell.classList.add('selected');
+
+  const num = document.createElement('span');
+  num.className = 'day-num';
+  num.textContent = day;
+  cell.appendChild(num);
+
+  cell.addEventListener('click', () => {
+    selectedCalDate = dateStr;
+    renderCalendar();
+    showEntryPanel(dateStr);
+  });
+
+  grid.appendChild(cell);
+}
+
+function showEntryPanel(dateStr) {
+  const panel = document.getElementById('entry-panel');
+  panel.style.display = 'block';
+  document.getElementById('panel-date-text').textContent = `${formatDisplayDate(dateStr)} ${getDayLabel(dateStr)}`;
+
+  const entry = entries[dateStr];
+  const body = document.getElementById('panel-body');
+
+  if (entry?.content) {
+    body.innerHTML = `<div class="panel-content">${esc(entry.content)}</div>`;
+    document.getElementById('panel-edit-btn').style.display = 'inline-block';
+  } else {
+    body.innerHTML = `<div class="panel-empty">아직 일기가 없어요.</div>`;
+    document.getElementById('panel-edit-btn').style.display = 'none';
+  }
+}
+
+/* ─────────────── 모드 배지 ─────────────── */
+function updateBadge() {
+  document.getElementById('mode-label').textContent = devMode
+    ? (isSyncing ? '동기화 중' : '개발자')
+    : '게스트';
+  document.getElementById('mode-icon').textContent = devMode ? '●' : '○';
+  document.getElementById('sync-spin').style.display = isSyncing ? 'inline' : 'none';
+}
+
+/* ─────────────── 인증 ─────────────── */
+function showModal() {
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('modal-pw').value = '';
+  document.getElementById('modal-err').textContent = '';
+  setTimeout(() => document.getElementById('modal-pw').focus(), 80);
+}
+function hideModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+async function tryLogin(password) {
+  document.getElementById('modal-err').textContent = '';
+  document.getElementById('modal-ok').textContent = '확인 중...';
+  try {
+    const res = await fetch(`${API}/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      devToken = data.token;
+      if (HAS_STORAGE) localStorage.setItem(TOKEN_KEY, devToken);
+      devMode = true;
+      hideModal();
+      updateBadge();
+      await syncFromNotion();
+    } else {
+      document.getElementById('modal-err').textContent = data.error || '비밀번호가 틀렸어요.';
+    }
+  } catch {
+    document.getElementById('modal-err').textContent = '서버 연결 실패. 잠시 후 다시 시도해주세요.';
+  } finally {
+    document.getElementById('modal-ok').textContent = '로그인';
+  }
+}
+
+function logout() {
+  devMode = false; devToken = null;
+  if (HAS_STORAGE) localStorage.removeItem(TOKEN_KEY);
+  entries = loadLocal();
+  renderWrite();
+  renderCalendar();
+  updateBadge();
+  toast('게스트 모드로 전환됐어요');
+}
+
+/* ─────────────── 이벤트 바인딩 ─────────────── */
+
+// 헤더 5번 탭 → 개발자 모드
+let tapCount = 0, tapTimer;
+document.getElementById('header-area').addEventListener('click', e => {
+  if (e.target.closest('#mode-badge')) {
+    if (devMode) {
+      if (confirm('게스트 모드로 전환할까요?')) logout();
+    } else {
+      showModal();
+    }
+    return;
+  }
+  if (devMode) return;
+  clearTimeout(tapTimer);
+  tapCount++;
+  if (tapCount >= 5) { tapCount = 0; showModal(); }
+  tapTimer = setTimeout(() => { tapCount = 0; }, 1500);
+});
+
+// 탭 전환
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('write-view').style.display    = tab === 'write'    ? '' : 'none';
+    document.getElementById('calendar-view').style.display = tab === 'calendar' ? '' : 'none';
+    if (tab === 'calendar') renderCalendar();
+  });
+});
+
+// 날짜 클릭 → date picker
+document.getElementById('date-display').addEventListener('click', () => {
+  const picker = document.getElementById('date-picker');
+  picker.style.pointerEvents = 'auto';
+  picker.showPicker?.() || picker.click();
+  picker.style.pointerEvents = 'none';
+});
+document.getElementById('date-picker').addEventListener('change', e => {
+  if (!e.target.value) return;
+  selectedDate = e.target.value;
+  renderWrite();
+});
+
+// 텍스트 입력 → 글자 수
+document.getElementById('diary-textarea').addEventListener('input', updateCharCount);
+
+// 저장 버튼
+document.getElementById('save-btn').addEventListener('click', saveDiary);
+document.getElementById('diary-textarea').addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveDiary(); }
+});
+
+// 캘린더 네비게이션
+document.getElementById('prev-month').addEventListener('click', () => {
+  calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('next-month').addEventListener('click', () => {
+  calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+document.getElementById('sel-year').addEventListener('change', e => {
+  calYear = +e.target.value; renderCalendar();
+});
+document.getElementById('sel-month').addEventListener('change', e => {
+  calMonth = +e.target.value; renderCalendar();
+});
+
+// 패널 수정하기 → 쓰기 탭으로
+document.getElementById('panel-edit-btn').addEventListener('click', () => {
+  selectedDate = selectedCalDate;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'write'));
+  document.getElementById('write-view').style.display    = '';
+  document.getElementById('calendar-view').style.display = 'none';
+  renderWrite();
+});
+
+// 모달
+document.getElementById('modal-cancel').addEventListener('click', hideModal);
+document.getElementById('modal-ok').addEventListener('click', () => tryLogin(document.getElementById('modal-pw').value));
+document.getElementById('modal-pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) document.getElementById('modal-ok').click();
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) hideModal();
+});
+
+/* ─────────────── 초기화 ─────────────── */
+const savedToken = HAS_STORAGE && localStorage.getItem(TOKEN_KEY);
+if (savedToken) {
+  devToken = savedToken;
+  devMode  = true;
+  updateBadge();
+  syncFromNotion().catch(() => {
+    devMode = false; devToken = null;
+    if (HAS_STORAGE) localStorage.removeItem(TOKEN_KEY);
+    entries = loadLocal();
+    renderWrite();
+    updateBadge();
+  });
+} else {
+  entries = loadLocal();
+  renderWrite();
+  updateBadge();
+}
+</script>
+</body>
+</html>
