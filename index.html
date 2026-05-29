@@ -4,32 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>일기</title>
-
-  <!-- PWA / 홈화면 바로가기 아이콘 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>" />
   <meta name="apple-mobile-web-app-title" content="일기" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#ffffff" />
-
-  <!-- Pretendard -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-
   <style>
     :root {
-      --bg:      #ffffff;
-      --text:    #0a0a0a;
-      --sub:     #888888;
-      --border:  #e8e8e8;
-      --hover:   #f5f5f5;
-      --radius:  6px;
+      --bg:     #ffffff;
+      --text:   #0d0d0d;
+      --sub:    #888;
+      --border: #e8e8e8;
+      --hover:  #f7f7f7;
+      --r:      6px;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-      font-family: 'Pretendard', -apple-system, 'Helvetica Neue', sans-serif;
+      font-family: 'Pretendard', -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100dvh;
@@ -44,51 +37,41 @@
       justify-content: space-between;
       align-items: center;
       padding: 32px 28px 0;
-      cursor: default;
       user-select: none;
     }
+    /* 로고 — 5번 탭하면 개발자 모달 */
     .logo {
       font-size: 1.05rem;
       font-weight: 700;
       letter-spacing: -0.5px;
+      cursor: default;
       display: flex;
       align-items: center;
       gap: 7px;
     }
-    .logo-icon { font-size: 1.1rem; }
-    #mode-badge {
-      font-size: 0.68rem;
-      font-weight: 500;
-      color: var(--sub);
+    /* 개발자 모드일 때만 보이는 극소 점 */
+    #dev-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--text);
+      opacity: 0;
+      transition: opacity .3s;
       cursor: pointer;
-      padding: 5px 11px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      transition: all .15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      letter-spacing: 0.1px;
+      flex-shrink: 0;
     }
-    #mode-badge:hover { border-color: #aaa; color: var(--text); }
-    #mode-badge.dev { border-color: var(--text); color: var(--text); }
-    #sync-spin { display: none; animation: spin .7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    #dev-dot.on { opacity: 1; }
 
     /* ── 탭 ── */
     .tabs {
       display: flex;
       border-bottom: 1px solid var(--border);
       margin: 22px 28px 0;
-      gap: 0;
     }
     .tab-btn {
       padding: 11px 0;
       margin-right: 26px;
-      border: none;
-      background: none;
-      font-size: 0.82rem;
-      font-weight: 600;
+      border: none; background: none;
+      font-size: 0.82rem; font-weight: 600;
       font-family: 'Pretendard', sans-serif;
       color: var(--sub);
       cursor: pointer;
@@ -97,273 +80,154 @@
       transition: color .15s, border-color .15s;
       letter-spacing: -0.1px;
     }
-    .tab-btn.active {
-      color: var(--text);
-      border-bottom-color: var(--text);
-    }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
 
-    /* ═══════════════ WRITE VIEW ═══════════════ */
+    /* ═══ WRITE VIEW ═══ */
     #write-view { padding: 32px 28px 0; }
 
     .date-row {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 28px;
-      position: relative;
+      display: flex; align-items: baseline; gap: 10px;
+      margin-bottom: 28px; position: relative;
     }
     #date-display {
-      font-size: 1.75rem;
-      font-weight: 700;
-      letter-spacing: -1px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: border-color .15s;
-      padding-bottom: 2px;
-      line-height: 1.2;
+      font-size: 1.75rem; font-weight: 700; letter-spacing: -1px;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: border-color .15s; padding-bottom: 2px; line-height: 1.2;
     }
     #date-display:hover { border-bottom-color: var(--text); }
-    #date-day {
-      font-size: 0.82rem;
-      color: var(--sub);
-      font-weight: 400;
-      letter-spacing: 0.1px;
-    }
-    /* 숨겨진 날짜 input */
-    #date-picker {
-      position: absolute;
-      opacity: 0;
-      width: 1px; height: 1px;
-      pointer-events: none;
-    }
+    #date-day { font-size: 0.82rem; color: var(--sub); font-weight: 400; }
+    #date-picker { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 
     #diary-textarea {
-      width: 100%;
-      min-height: 52vh;
-      border: none;
-      outline: none;
-      resize: none;
-      font-size: 1rem;
-      line-height: 1.9;
-      color: var(--text);
-      font-family: 'Pretendard', sans-serif;
-      background: transparent;
-      caret-color: var(--text);
-      letter-spacing: -0.1px;
+      width: 100%; min-height: 52vh;
+      border: none; outline: none; resize: none;
+      font-size: 1rem; line-height: 1.9; letter-spacing: -0.1px;
+      color: var(--text); font-family: 'Pretendard', sans-serif;
+      background: transparent; caret-color: var(--text);
     }
     #diary-textarea::placeholder { color: #d0d0d0; }
 
     .write-footer {
-      position: sticky;
-      bottom: 0;
-      background: var(--bg);
+      position: sticky; bottom: 0; background: var(--bg);
       border-top: 1px solid var(--border);
       padding: 14px 28px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: flex; justify-content: space-between; align-items: center;
       margin: 0 -28px;
     }
-    .write-footer-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    #char-count { font-size: 0.72rem; color: var(--sub); }
-    #entry-status { font-size: 0.72rem; color: var(--sub); }
-
+    #char-count  { font-size: 0.72rem; color: var(--sub); }
+    #entry-status { font-size: 0.72rem; color: var(--sub); margin-left: 12px; }
     #save-btn {
       padding: 10px 26px;
-      background: var(--text);
-      color: var(--bg);
-      border: none;
-      border-radius: var(--radius);
-      font-size: 0.82rem;
-      font-weight: 600;
+      background: var(--text); color: var(--bg);
+      border: none; border-radius: var(--r);
+      font-size: 0.82rem; font-weight: 600;
       font-family: 'Pretendard', sans-serif;
-      cursor: pointer;
-      letter-spacing: -0.1px;
+      cursor: pointer; letter-spacing: -0.1px;
       transition: opacity .15s;
     }
     #save-btn:hover { opacity: .72; }
     #save-btn:disabled { opacity: .22; cursor: not-allowed; }
 
-    /* ═══════════════ CALENDAR VIEW ═══════════════ */
+    /* ═══ CALENDAR VIEW ═══ */
     #calendar-view { padding: 28px; display: none; }
 
     .month-nav {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 24px;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 24px;
     }
     .nav-arrow {
       width: 30px; height: 30px;
-      border: 1px solid var(--border);
-      background: none;
-      border-radius: var(--radius);
-      font-size: 0.8rem;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--text);
-      transition: background .1s;
+      border: 1px solid var(--border); background: none;
+      border-radius: var(--r); font-size: 0.8rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text); transition: background .1s;
     }
     .nav-arrow:hover { background: var(--hover); }
-    .month-selects {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex: 1;
-    }
+    .month-selects { display: flex; align-items: center; gap: 6px; flex: 1; }
     .month-selects select {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 5px 8px;
-      font-size: 0.82rem;
-      font-family: inherit;
-      background: white;
-      cursor: pointer;
-      outline: none;
-      color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--r);
+      padding: 5px 8px; font-size: 0.82rem;
+      font-family: 'Pretendard', sans-serif;
+      background: white; cursor: pointer; outline: none; color: var(--text);
       transition: border-color .15s;
     }
     .month-selects select:focus { border-color: var(--text); }
 
     .cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
       margin-bottom: 24px;
     }
     .cal-head {
-      text-align: center;
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--sub);
-      padding: 6px 0 10px;
-      letter-spacing: 0.3px;
+      text-align: center; font-size: 0.68rem; font-weight: 600;
+      color: var(--sub); padding: 6px 0 10px; letter-spacing: 0.3px;
     }
-    .cal-head:first-child { color: #e05252; }
-    .cal-head:last-child  { color: #5271e0; }
+    .cal-head:first-child { color: #d94f4f; }
+    .cal-head:last-child  { color: #4f6fd9; }
 
     .cal-day {
-      aspect-ratio: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: background .1s;
-      position: relative;
-      font-size: 0.82rem;
+      aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      border-radius: var(--r); cursor: pointer;
+      transition: background .1s; position: relative; font-size: 0.82rem;
     }
     .cal-day:hover:not(.empty) { background: var(--hover); }
     .cal-day.empty { cursor: default; pointer-events: none; }
-    .cal-day.other-month { color: #ccc; }
-    .cal-day.other-month .dot { background: #ddd; }
+    .cal-day.other-month .day-num { color: #ccc; }
 
-    /* 오늘 */
-    .cal-day.today .day-num {
-      font-weight: 700;
-    }
+    .day-num { position: relative; line-height: 1; }
+
+    /* 오늘 — 아래 점 */
     .cal-day.today .day-num::after {
-      content: '';
-      display: block;
-      width: 3px; height: 3px;
-      background: var(--text);
-      border-radius: 50%;
-      margin: 2px auto 0;
+      content: ''; display: block;
+      width: 3px; height: 3px; background: var(--text);
+      border-radius: 50%; margin: 3px auto 0;
     }
-
-    /* 일기 있는 날 — 원 */
+    /* 일기 있는 날 — 원형 테두리 */
     .cal-day.has-entry .day-num {
-      width: 28px; height: 28px;
-      border: 1.5px solid var(--text);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 30px; height: 30px;
+      border: 1.5px solid var(--text); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
       font-weight: 600;
     }
-    /* 오늘 + 일기 있음 */
+    /* 오늘 + 일기 있음 — 채운 원 */
     .cal-day.today.has-entry .day-num {
-      background: var(--text);
-      color: var(--bg);
+      background: var(--text); color: var(--bg);
     }
     .cal-day.today.has-entry .day-num::after { display: none; }
 
-    /* 선택된 날 */
-    .cal-day.selected:not(.has-entry) .day-num {
-      background: var(--hover);
-      border-radius: 50%;
-      width: 28px; height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* 일요일/토요일 색 */
-    .cal-day:nth-child(7n+1) .day-num { color: #e05252; }
-    .cal-day:nth-child(7n)   .day-num { color: #5271e0; }
+    /* 요일별 색 */
+    .cal-day:nth-child(7n+1) { color: #d94f4f; }
+    .cal-day:nth-child(7n)   { color: #4f6fd9; }
     .cal-day.has-entry:nth-child(7n+1) .day-num,
     .cal-day.has-entry:nth-child(7n)   .day-num { color: inherit; }
 
     /* ── 일기 미리보기 패널 ── */
-    #entry-panel {
-      border-top: 1px solid var(--border);
-      padding-top: 20px;
-      display: none;
-    }
+    #entry-panel { border-top: 1px solid var(--border); padding-top: 20px; display: none; }
     .panel-date {
-      font-size: 0.75rem;
-      color: var(--sub);
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      font-size: 0.75rem; color: var(--sub); margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
     }
     .panel-edit-btn {
-      font-size: 0.72rem;
-      color: var(--sub);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 3px 10px;
-      cursor: pointer;
-      font-family: inherit;
+      font-size: 0.72rem; color: var(--sub); background: none;
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 3px 10px; cursor: pointer; font-family: 'Pretendard', sans-serif;
       transition: border-color .15s;
     }
     .panel-edit-btn:hover { border-color: var(--text); color: var(--text); }
-    .panel-content {
-      font-size: 0.9rem;
-      line-height: 1.8;
-      white-space: pre-wrap;
-      color: var(--text);
-    }
-    .panel-empty {
-      font-size: 0.85rem;
-      color: var(--sub);
-    }
+    .panel-content { font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; }
+    .panel-empty { font-size: 0.85rem; color: var(--sub); }
 
     /* ── 비밀번호 모달 ── */
     #modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.35);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.3); z-index: 200;
+      align-items: center; justify-content: center;
       backdrop-filter: blur(3px);
     }
     #modal-overlay.show { display: flex; }
     #modal {
-      background: var(--bg);
-      border-radius: 12px;
-      padding: 32px 28px;
-      width: min(360px, 90vw);
-      box-shadow: 0 8px 40px rgba(0,0,0,.14);
+      background: var(--bg); border-radius: 14px;
+      padding: 32px 28px; width: min(360px, 90vw);
+      box-shadow: 0 8px 40px rgba(0,0,0,.12);
       animation: popIn .18s ease;
     }
     @keyframes popIn {
@@ -373,68 +237,47 @@
     #modal h2 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
     #modal p  { font-size: 0.78rem; color: var(--sub); margin-bottom: 20px; line-height: 1.6; }
     #modal-pw {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 11px 14px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      outline: none;
-      margin-bottom: 10px;
-      transition: border-color .15s;
+      width: 100%; border: 1px solid var(--border); border-radius: var(--r);
+      padding: 11px 14px; font-size: 0.95rem; font-family: 'Pretendard', sans-serif;
+      outline: none; margin-bottom: 10px; transition: border-color .15s;
     }
     #modal-pw:focus { border-color: var(--text); }
-    #modal-err { font-size: 0.75rem; color: #e05252; min-height: 16px; margin-bottom: 14px; }
+    #modal-err { font-size: 0.75rem; color: #d94f4f; min-height: 16px; margin-bottom: 14px; }
     .modal-btns { display: flex; gap: 8px; }
     .modal-btns button {
-      flex: 1; padding: 11px;
-      border-radius: var(--radius);
+      flex: 1; padding: 11px; border-radius: var(--r);
       border: 1px solid var(--border);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
+      font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; font-family: 'Pretendard', sans-serif;
       transition: opacity .15s;
     }
     #modal-cancel { background: var(--bg); color: var(--sub); }
     #modal-ok { background: var(--text); color: var(--bg); border-color: var(--text); }
-    #modal-ok:hover { opacity: .75; }
+    #modal-ok:hover { opacity: .72; }
 
     /* ── 토스트 ── */
     #toast {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--text);
-      color: var(--bg);
-      padding: 9px 18px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 500;
-      z-index: 999;
-      opacity: 0;
+      position: fixed; bottom: 80px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--text); color: var(--bg);
+      padding: 9px 18px; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 500;
+      z-index: 999; opacity: 0;
       transition: opacity .2s, transform .2s;
-      white-space: nowrap;
-      pointer-events: none;
+      white-space: nowrap; pointer-events: none;
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    @media (min-width: 520px) {
-      #date-display { font-size: 2rem; }
-    }
   </style>
 </head>
 <body>
 
-<!-- 토스트 -->
 <div id="toast"></div>
 
 <!-- 비밀번호 모달 -->
 <div id="modal-overlay">
   <div id="modal">
-    <h2>개발자 모드</h2>
-    <p>비밀번호를 입력하면 Notion과 동기화됩니다.<br>게스트는 취소를 눌러 로컬 모드로 사용하세요.</p>
+    <h2>🔐 개발자 모드</h2>
+    <p>비밀번호를 입력하면 Notion과 동기화됩니다.</p>
     <input id="modal-pw" type="password" placeholder="비밀번호" autocomplete="current-password" />
     <div id="modal-err"></div>
     <div class="modal-btns">
@@ -444,14 +287,10 @@
   </div>
 </div>
 
-<!-- 헤더 (5번 탭 → 개발자 모드) -->
-<header id="header-area">
-  <span class="logo"><span class="logo-icon">📔</span> 일기</span>
-  <div id="mode-badge">
-    <span id="mode-icon">○</span>
-    <span id="mode-label">게스트</span>
-    <span id="sync-spin">↻</span>
-  </div>
+<!-- 헤더: 로고 5번 탭 → 개발자 모달 / dev-dot 클릭 → 로그아웃 -->
+<header>
+  <span class="logo" id="logo-tap">📔 일기</span>
+  <span id="dev-dot" title="개발자 모드 해제"></span>
 </header>
 
 <!-- 탭 -->
@@ -469,7 +308,7 @@
   </div>
   <textarea id="diary-textarea" placeholder="오늘 하루를 기록해보세요..."></textarea>
   <div class="write-footer">
-    <div class="write-footer-left">
+    <div style="display:flex;align-items:center;">
       <span id="char-count">0자</span>
       <span id="entry-status"></span>
     </div>
@@ -480,7 +319,7 @@
 <!-- ── CALENDAR VIEW ── -->
 <div id="calendar-view">
   <div class="month-nav">
-    <button class="nav-arrow" id="prev-month">&#8592;</button>
+    <button class="nav-arrow" id="prev-month">←</button>
     <div class="month-selects">
       <select id="sel-year"></select>
       <select id="sel-month">
@@ -492,7 +331,7 @@
         <option value="10">11월</option><option value="11">12월</option>
       </select>
     </div>
-    <button class="nav-arrow" id="next-month">&#8594;</button>
+    <button class="nav-arrow" id="next-month">→</button>
   </div>
   <div class="cal-grid" id="cal-grid"></div>
   <div id="entry-panel">
@@ -505,28 +344,28 @@
 </div>
 
 <script>
-/* ─────────────── 상수 / 상태 ─────────────── */
+/* ═══════════════════════════════════════
+   상수 / 상태
+═══════════════════════════════════════ */
 const STORAGE_KEY = 'goo_diary_v1';
 const TOKEN_KEY   = 'goo_diary_token';
-const API         = '/api';
 const DAYS_KO     = ['일','월','화','수','목','금','토'];
 
-let devMode  = false;
-let devToken = null;
+let devMode   = false;
+let devToken  = null;
 let isSyncing = false;
 
-// 날짜별 항목 맵: { "2026-05-29": { content, notionId, savedAt } }
+// { "2026-05-29": { content, notionId, savedAt } }
 let entries = {};
 
-// 현재 선택 날짜 (YYYY-MM-DD)
-let selectedDate = toDateStr(new Date());
-
-// 캘린더 상태
-let calYear  = new Date().getFullYear();
-let calMonth = new Date().getMonth();
+let selectedDate    = toDateStr(new Date());
+let calYear         = new Date().getFullYear();
+let calMonth        = new Date().getMonth();
 let selectedCalDate = null;
 
-/* ─────────────── 날짜 유틸 ─────────────── */
+/* ═══════════════════════════════════════
+   날짜 유틸
+═══════════════════════════════════════ */
 function toDateStr(d) {
   const p = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
@@ -535,152 +374,149 @@ function parseDateStr(s) {
   const [y,m,d] = s.split('-').map(Number);
   return new Date(y, m-1, d);
 }
-function formatDisplayDate(s) {
-  const d = parseDateStr(s);
-  const p = n => String(n).padStart(2,'0');
+function formatDisplay(s) {
+  const d = parseDateStr(s), p = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`;
 }
-function getDayLabel(s) {
-  return DAYS_KO[parseDateStr(s).getDay()] + '요일';
-}
+function dayLabel(s) { return DAYS_KO[parseDateStr(s).getDay()] + '요일'; }
 
-/* ─────────────── 스토리지 ─────────────── */
-function isStorageAvailable() {
-  try { localStorage.setItem('__t__','1'); localStorage.removeItem('__t__'); return true; }
+/* ═══════════════════════════════════════
+   스토리지
+═══════════════════════════════════════ */
+function storageOk() {
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; }
   catch { return false; }
 }
-const HAS_STORAGE = isStorageAvailable();
+const HAS_STORAGE = storageOk();
 
-function loadLocal() {
+function loadLocal()  {
   if (!HAS_STORAGE) return {};
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-  catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
 }
-function saveLocal() {
-  if (!HAS_STORAGE) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+function saveLocal()  {
+  if (HAS_STORAGE) localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
-/* ─────────────── 토스트 ─────────────── */
-let _toastTimer;
-function toast(msg, ms = 2200) {
+/* ═══════════════════════════════════════
+   토스트
+═══════════════════════════════════════ */
+let _tt;
+function toast(msg, ms=2200) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), ms);
 }
 
-/* ─────────────── XSS ─────────────── */
+/* ═══════════════════════════════════════
+   XSS
+═══════════════════════════════════════ */
 function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-/* ─────────────── API 헬퍼 ─────────────── */
-function apiHeaders() {
-  return { 'Content-Type':'application/json', 'Authorization':`Bearer ${devToken}` };
-}
-async function apiFetch(path, opts = {}) {
-  const res = await fetch(API + path, { ...opts, headers: { ...apiHeaders(), ...(opts.headers||{}) } });
-  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || `오류 ${res.status}`); }
+/* ═══════════════════════════════════════
+   API (개발자 모드)
+═══════════════════════════════════════ */
+async function apiFetch(path, opts={}) {
+  const res = await fetch('/api' + path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${devToken}`,
+      ...(opts.headers||{})
+    }
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e.error || `오류 ${res.status}`);
+  }
   return res.json();
 }
 
-/* ─────────────── Notion 동기화 ─────────────── */
 async function syncFromNotion() {
-  isSyncing = true; updateBadge();
+  isSyncing = true; updateDevDot();
   try {
     const data = await apiFetch('/diary');
     entries = {};
     for (const e of data.entries) {
       if (e.date) entries[e.date] = { content: e.content, notionId: e.notionId, savedAt: e.date };
     }
-    renderWrite();
-    renderCalendar();
+    renderWrite(); renderCalendar();
     toast('Notion과 동기화됐어요');
   } catch(e) {
     toast(`동기화 실패: ${e.message}`);
   } finally {
-    isSyncing = false; updateBadge();
+    isSyncing = false; updateDevDot();
   }
 }
 
 async function notionSave(date, content) {
-  const existing = entries[date];
-  if (existing?.notionId) {
-    await apiFetch('/diary', { method:'PATCH', body: JSON.stringify({ notionId: existing.notionId, content }) });
-    return existing.notionId;
-  } else {
-    const r = await apiFetch('/diary', { method:'POST', body: JSON.stringify({ date, content }) });
-    return r.notionId;
+  const ex = entries[date];
+  if (ex?.notionId) {
+    await apiFetch('/diary', { method:'PATCH', body: JSON.stringify({ notionId: ex.notionId, content }) });
+    return ex.notionId;
   }
+  const r = await apiFetch('/diary', { method:'POST', body: JSON.stringify({ date, content }) });
+  return r.notionId;
 }
 
-/* ─────────────── 저장 ─────────────── */
+/* ═══════════════════════════════════════
+   저장
+═══════════════════════════════════════ */
 async function saveDiary() {
   const content = document.getElementById('diary-textarea').value.trim();
-  if (!content) return;
+  if (!content) { toast('내용을 입력해주세요'); return; }
 
-  document.getElementById('save-btn').disabled = true;
-  document.getElementById('save-btn').textContent = '저장 중...';
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '저장 중...';
 
   try {
-    const existing = entries[selectedDate] || {};
     if (devMode) {
       const notionId = await notionSave(selectedDate, content);
       entries[selectedDate] = { content, notionId, savedAt: new Date().toISOString() };
       toast('Notion에 저장됐어요');
     } else {
-      entries[selectedDate] = { content, notionId: existing.notionId || null, savedAt: new Date().toISOString() };
+      entries[selectedDate] = { ...(entries[selectedDate]||{}), content, savedAt: new Date().toISOString() };
       saveLocal();
       toast('저장됐어요');
     }
-    renderWriteStatus();
-    renderCalendar();
+    renderWriteStatus(); renderCalendar();
   } catch(e) {
     toast(`저장 실패: ${e.message}`);
   } finally {
-    document.getElementById('save-btn').disabled = false;
-    document.getElementById('save-btn').textContent = '저장';
+    btn.disabled = false; btn.textContent = '저장';
   }
 }
 
-/* ─────────────── WRITE 렌더링 ─────────────── */
+/* ═══════════════════════════════════════
+   WRITE 렌더링
+═══════════════════════════════════════ */
 function renderWrite() {
-  // 날짜 표시
-  document.getElementById('date-display').textContent = formatDisplayDate(selectedDate);
-  document.getElementById('date-day').textContent = getDayLabel(selectedDate);
-  document.getElementById('date-picker').value = selectedDate;
+  document.getElementById('date-display').textContent = formatDisplay(selectedDate);
+  document.getElementById('date-day').textContent     = dayLabel(selectedDate);
+  document.getElementById('date-picker').value        = selectedDate;
 
-  // 내용 불러오기
-  const entry = entries[selectedDate];
-  const textarea = document.getElementById('diary-textarea');
-  if (document.activeElement !== textarea) {
-    textarea.value = entry?.content || '';
-  }
-  updateCharCount();
-  renderWriteStatus();
+  const ta = document.getElementById('diary-textarea');
+  if (document.activeElement !== ta) ta.value = entries[selectedDate]?.content || '';
+  updateCharCount(); renderWriteStatus();
 }
-
 function renderWriteStatus() {
-  const entry = entries[selectedDate];
+  const e = entries[selectedDate];
   const el = document.getElementById('entry-status');
-  if (entry?.savedAt) {
-    const d = new Date(entry.savedAt);
-    const p = n => String(n).padStart(2,'0');
-    el.textContent = `${p(d.getHours())}:${p(d.getMinutes())} 저장됨` + (entry.notionId ? ' · Notion' : '');
-  } else {
-    el.textContent = '';
-  }
+  if (e?.savedAt) {
+    const d = new Date(e.savedAt), p = n => String(n).padStart(2,'0');
+    el.textContent = `  ${p(d.getHours())}:${p(d.getMinutes())} 저장` + (e.notionId ? ' · N' : '');
+  } else { el.textContent = ''; }
 }
-
 function updateCharCount() {
-  const len = document.getElementById('diary-textarea').value.length;
-  document.getElementById('char-count').textContent = `${len.toLocaleString()}자`;
+  document.getElementById('char-count').textContent =
+    `${document.getElementById('diary-textarea').value.length.toLocaleString()}자`;
 }
 
-/* ─────────────── CALENDAR 렌더링 ─────────────── */
-function buildYearOptions() {
+/* ═══════════════════════════════════════
+   CALENDAR 렌더링
+═══════════════════════════════════════ */
+function buildYearSel() {
   const sel = document.getElementById('sel-year');
   const cur = new Date().getFullYear();
   sel.innerHTML = '';
@@ -693,104 +529,95 @@ function buildYearOptions() {
 }
 
 function renderCalendar() {
-  buildYearOptions();
+  buildYearSel();
   document.getElementById('sel-month').value = calMonth;
 
-  const grid = document.getElementById('cal-grid');
+  const grid  = document.getElementById('cal-grid');
   grid.innerHTML = '';
 
   // 요일 헤더
   ['일','월','화','수','목','금','토'].forEach(d => {
     const h = document.createElement('div');
-    h.className = 'cal-head';
-    h.textContent = d;
+    h.className = 'cal-head'; h.textContent = d;
     grid.appendChild(h);
   });
 
-  const today = toDateStr(new Date());
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const today       = toDateStr(new Date());
+  const firstDay    = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
 
-  // 이전 달 빈칸
+  // 이전 달 빈 칸
   for (let i = 0; i < firstDay; i++) {
-    const day = daysInPrev - firstDay + 1 + i;
-    appendDay(grid, day, calYear, calMonth - 1, today, true);
+    appendDay(grid, daysInPrev - firstDay + 1 + i, calYear, calMonth - 1, today, true);
   }
-
   // 현재 달
   for (let d = 1; d <= daysInMonth; d++) {
     appendDay(grid, d, calYear, calMonth, today, false);
   }
-
-  // 다음 달 빈칸
-  const total = firstDay + daysInMonth;
-  const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
-  for (let i = 1; i <= remain; i++) {
-    appendDay(grid, i, calYear, calMonth + 1, today, true);
+  // 다음 달 빈 칸
+  const remain = (firstDay + daysInMonth) % 7;
+  if (remain > 0) {
+    for (let i = 1; i <= 7 - remain; i++) {
+      appendDay(grid, i, calYear, calMonth + 1, today, true);
+    }
   }
 
-  // 패널 갱신
-  if (selectedCalDate) showEntryPanel(selectedCalDate);
+  if (selectedCalDate) showPanel(selectedCalDate);
 }
 
-function appendDay(grid, day, year, month, today, otherMonth) {
+function appendDay(grid, day, year, month, today, other) {
   const p = n => String(n).padStart(2,'0');
-  // month는 0-based
-  const realMonth = ((month % 12) + 12) % 12;
-  const realYear  = year + Math.floor(month / 12);
-  const dateStr   = `${realYear}-${p(realMonth+1)}-${p(day)}`;
+  let y = year, m = month;
+  if (m < 0)  { m = 11; y--; }
+  if (m > 11) { m = 0;  y++; }
+  const dateStr = `${y}-${p(m+1)}-${p(day)}`;
 
   const cell = document.createElement('div');
-  cell.className = 'cal-day';
-  if (otherMonth) cell.classList.add('other-month');
+  cell.className = 'cal-day' + (other ? ' other-month' : '');
   if (dateStr === today) cell.classList.add('today');
+  // ★ 일기가 있는 날만 원 표시
   if (entries[dateStr]?.content) cell.classList.add('has-entry');
   if (dateStr === selectedCalDate) cell.classList.add('selected');
 
   const num = document.createElement('span');
-  num.className = 'day-num';
-  num.textContent = day;
+  num.className = 'day-num'; num.textContent = day;
   cell.appendChild(num);
 
   cell.addEventListener('click', () => {
     selectedCalDate = dateStr;
-    renderCalendar();
-    showEntryPanel(dateStr);
+    renderCalendar(); showPanel(dateStr);
   });
-
   grid.appendChild(cell);
 }
 
-function showEntryPanel(dateStr) {
+function showPanel(dateStr) {
   const panel = document.getElementById('entry-panel');
   panel.style.display = 'block';
-  document.getElementById('panel-date-text').textContent = `${formatDisplayDate(dateStr)} ${getDayLabel(dateStr)}`;
+  document.getElementById('panel-date-text').textContent =
+    `${formatDisplay(dateStr)} ${dayLabel(dateStr)}`;
 
-  const entry = entries[dateStr];
-  const body = document.getElementById('panel-body');
-
-  if (entry?.content) {
-    body.innerHTML = `<div class="panel-content">${esc(entry.content)}</div>`;
-    document.getElementById('panel-edit-btn').style.display = 'inline-block';
-  } else {
-    body.innerHTML = `<div class="panel-empty">아직 일기가 없어요.</div>`;
-    document.getElementById('panel-edit-btn').style.display = 'none';
-  }
+  const e = entries[dateStr];
+  document.getElementById('panel-body').innerHTML = e?.content
+    ? `<div class="panel-content">${esc(e.content)}</div>`
+    : `<div class="panel-empty">아직 일기가 없어요.</div>`;
+  document.getElementById('panel-edit-btn').style.display = e?.content ? '' : 'none';
 }
 
-/* ─────────────── 모드 배지 ─────────────── */
-function updateBadge() {
-  const badge = document.getElementById('mode-badge');
-  document.getElementById('mode-label').textContent = devMode
-    ? (isSyncing ? '동기화 중' : 'Notion 연동')
-    : '로컬 저장';
-  document.getElementById('mode-icon').textContent = devMode ? '●' : '○';
-  document.getElementById('sync-spin').style.display = isSyncing ? 'inline' : 'none';
-  badge.classList.toggle('dev', devMode);
+/* ═══════════════════════════════════════
+   개발자 dot
+═══════════════════════════════════════ */
+function updateDevDot() {
+  const dot = document.getElementById('dev-dot');
+  dot.classList.toggle('on', devMode);
+  dot.title = devMode
+    ? (isSyncing ? '동기화 중...' : 'Notion 연동 중 · 클릭시 해제')
+    : '';
 }
 
-/* ─────────────── 인증 ─────────────── */
+/* ═══════════════════════════════════════
+   인증
+═══════════════════════════════════════ */
 function showModal() {
   document.getElementById('modal-overlay').classList.add('show');
   document.getElementById('modal-pw').value = '';
@@ -801,30 +628,32 @@ function hideModal() {
   document.getElementById('modal-overlay').classList.remove('show');
 }
 
-async function tryLogin(password) {
-  document.getElementById('modal-err').textContent = '';
-  document.getElementById('modal-ok').textContent = '확인 중...';
+async function tryLogin(pw) {
+  if (!pw) return;
+  const errEl = document.getElementById('modal-err');
+  const okBtn = document.getElementById('modal-ok');
+  errEl.textContent = ''; okBtn.textContent = '확인 중...'; okBtn.disabled = true;
+
   try {
-    const res = await fetch(`${API}/auth`, {
+    const res = await fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password: pw })
     });
     const data = await res.json();
     if (data.ok) {
       devToken = data.token;
       if (HAS_STORAGE) localStorage.setItem(TOKEN_KEY, devToken);
       devMode = true;
-      hideModal();
-      updateBadge();
+      hideModal(); updateDevDot();
       await syncFromNotion();
     } else {
-      document.getElementById('modal-err').textContent = data.error || '비밀번호가 틀렸어요.';
+      errEl.textContent = data.error || '비밀번호가 틀렸어요.';
     }
   } catch {
-    document.getElementById('modal-err').textContent = '서버 연결 실패. 잠시 후 다시 시도해주세요.';
+    errEl.textContent = '서버에 연결할 수 없어요. Vercel 배포 후 사용해주세요.';
   } finally {
-    document.getElementById('modal-ok').textContent = '로그인';
+    okBtn.textContent = '로그인'; okBtn.disabled = false;
   }
 }
 
@@ -832,31 +661,27 @@ function logout() {
   devMode = false; devToken = null;
   if (HAS_STORAGE) localStorage.removeItem(TOKEN_KEY);
   entries = loadLocal();
-  renderWrite();
-  renderCalendar();
-  updateBadge();
-  toast('게스트 모드로 전환됐어요');
+  renderWrite(); renderCalendar(); updateDevDot();
+  toast('로컬 모드로 전환됐어요');
 }
 
-/* ─────────────── 이벤트 바인딩 ─────────────── */
+/* ═══════════════════════════════════════
+   이벤트 바인딩
+═══════════════════════════════════════ */
 
-// 배지 클릭: 개발자 모드면 로그아웃만, 게스트면 아무것도 안 함
-document.getElementById('mode-badge').addEventListener('click', e => {
-  e.stopPropagation(); // 헤더 탭 카운트에 영향 주지 않도록
-  if (devMode) {
-    if (confirm('게스트 모드로 전환할까요?')) logout();
-  }
-});
-
-// 헤더 로고 영역 5번 탭 → 개발자 모드 모달
+// 로고 5번 탭 → 개발자 모달
 let tapCount = 0, tapTimer;
-document.getElementById('header-area').addEventListener('click', e => {
-  if (e.target.closest('#mode-badge')) return; // 배지 클릭은 무시
+document.getElementById('logo-tap').addEventListener('click', () => {
   if (devMode) return;
   clearTimeout(tapTimer);
   tapCount++;
   if (tapCount >= 5) { tapCount = 0; showModal(); }
   tapTimer = setTimeout(() => { tapCount = 0; }, 1500);
+});
+
+// dev-dot 클릭 → 로그아웃
+document.getElementById('dev-dot').addEventListener('click', () => {
+  if (confirm('개발자 모드를 해제하고 로컬 모드로 전환할까요?')) logout();
 });
 
 // 탭 전환
@@ -866,53 +691,53 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     const tab = btn.dataset.tab;
     document.getElementById('write-view').style.display    = tab === 'write'    ? '' : 'none';
-    document.getElementById('calendar-view').style.display = tab === 'calendar' ? '' : 'none';
-    if (tab === 'calendar') renderCalendar();
+    document.getElementById('calendar-view').style.display = tab === 'calendar' ? 'block' : 'none';
+    if (tab === 'calendar') {
+      // 탭 전환 시 항상 현재 월로 초기화
+      calYear  = new Date().getFullYear();
+      calMonth = new Date().getMonth();
+      selectedCalDate = null;
+      document.getElementById('entry-panel').style.display = 'none';
+      renderCalendar();
+    }
   });
 });
 
 // 날짜 클릭 → date picker
 document.getElementById('date-display').addEventListener('click', () => {
-  const picker = document.getElementById('date-picker');
-  picker.style.pointerEvents = 'auto';
-  picker.showPicker?.() || picker.click();
-  picker.style.pointerEvents = 'none';
+  const p = document.getElementById('date-picker');
+  p.style.pointerEvents = 'auto';
+  p.showPicker?.() || p.click();
+  p.style.pointerEvents = 'none';
 });
 document.getElementById('date-picker').addEventListener('change', e => {
   if (!e.target.value) return;
-  selectedDate = e.target.value;
-  renderWrite();
+  selectedDate = e.target.value; renderWrite();
 });
 
-// 텍스트 입력 → 글자 수
+// 텍스트 → 글자 수
 document.getElementById('diary-textarea').addEventListener('input', updateCharCount);
 
-// 저장 버튼
+// 저장 버튼 / Cmd+S
 document.getElementById('save-btn').addEventListener('click', saveDiary);
 document.getElementById('diary-textarea').addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveDiary(); }
 });
 
-// 캘린더 네비게이션
+// 캘린더 네비
 document.getElementById('prev-month').addEventListener('click', () => {
-  calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
-  renderCalendar();
+  calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar();
 });
 document.getElementById('next-month').addEventListener('click', () => {
-  calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
-  renderCalendar();
+  calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar();
 });
-document.getElementById('sel-year').addEventListener('change', e => {
-  calYear = +e.target.value; renderCalendar();
-});
-document.getElementById('sel-month').addEventListener('change', e => {
-  calMonth = +e.target.value; renderCalendar();
-});
+document.getElementById('sel-year').addEventListener('change',  e => { calYear  = +e.target.value; renderCalendar(); });
+document.getElementById('sel-month').addEventListener('change', e => { calMonth = +e.target.value; renderCalendar(); });
 
-// 패널 수정하기 → 쓰기 탭으로
+// 패널 수정 → 쓰기 탭
 document.getElementById('panel-edit-btn').addEventListener('click', () => {
   selectedDate = selectedCalDate;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'write'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab==='write'));
   document.getElementById('write-view').style.display    = '';
   document.getElementById('calendar-view').style.display = 'none';
   renderWrite();
@@ -920,7 +745,9 @@ document.getElementById('panel-edit-btn').addEventListener('click', () => {
 
 // 모달
 document.getElementById('modal-cancel').addEventListener('click', hideModal);
-document.getElementById('modal-ok').addEventListener('click', () => tryLogin(document.getElementById('modal-pw').value));
+document.getElementById('modal-ok').addEventListener('click', () => {
+  tryLogin(document.getElementById('modal-pw').value);
+});
 document.getElementById('modal-pw').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.isComposing) document.getElementById('modal-ok').click();
 });
@@ -928,24 +755,26 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-overlay')) hideModal();
 });
 
-/* ─────────────── 초기화 ─────────────── */
-const savedToken = HAS_STORAGE && localStorage.getItem(TOKEN_KEY);
-if (savedToken) {
-  devToken = savedToken;
-  devMode  = true;
-  updateBadge();
-  syncFromNotion().catch(() => {
-    devMode = false; devToken = null;
-    if (HAS_STORAGE) localStorage.removeItem(TOKEN_KEY);
+/* ═══════════════════════════════════════
+   초기화
+═══════════════════════════════════════ */
+(async () => {
+  const saved = HAS_STORAGE && localStorage.getItem(TOKEN_KEY);
+  if (saved) {
+    devToken = saved; devMode = true; updateDevDot();
+    try {
+      await syncFromNotion();
+    } catch {
+      devMode = false; devToken = null;
+      if (HAS_STORAGE) localStorage.removeItem(TOKEN_KEY);
+      entries = loadLocal(); updateDevDot();
+    }
+  } else {
     entries = loadLocal();
-    renderWrite();
-    updateBadge();
-  });
-} else {
-  entries = loadLocal();
+    updateDevDot();
+  }
   renderWrite();
-  updateBadge();
-}
+})();
 </script>
 </body>
 </html>
